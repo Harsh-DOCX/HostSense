@@ -1,4 +1,4 @@
-DISCORD_TOKEN = "MTQ5NzYyNDU3NDc4MTgyMTExOA.G4DJ9x.jdzNTR59gX3nGdVCOogsXh7nUCptrY5TTNwVuY"
+DISCORD_TOKEN = "enter-discord-token"
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "llama3"

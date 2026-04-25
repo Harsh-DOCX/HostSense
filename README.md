@@ -13,7 +13,7 @@ The bot uses local Ollama responses and includes a stress/lives system for off-t
 ## Project Structure
 
 ```text
-discord-hosting-bot/
+HostSense/
   main.py
   config.py
   ollama_client.py
@@ -32,7 +32,7 @@ discord-hosting-bot/
 
 1. Open the project:
    ```powershell
-   cd discord-hosting-bot
+   cd HostSense
    ```
 2. Create and activate a virtual environment:
    ```powershell
@@ -50,7 +50,7 @@ discord-hosting-bot/
 
 ## Run
 
-From `discord-hosting-bot/`:
+From `HostSense/`:
 
 ```powershell
 python main.py
