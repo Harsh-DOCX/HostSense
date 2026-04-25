@@ -1,6 +1,6 @@
 import discord
 
-from config import DISCORD_TOKEN, LIFE_LIMIT, RECOVERY_REQUIRED
+from config import DISCORD_TOKEN, LIFE_LIMIT, RECOVERY_REQUIRED, USER_DATA_FILE
 from ollama_client import query_ollama
 from prompt_builder import build_prompt
 from stress_manager import StressManager
@@ -9,7 +9,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 client = discord.Client(intents=intents)
-stress_manager = StressManager()
+stress_manager = StressManager(USER_DATA_FILE)
 
 
 def invalid_response(stress: int, lives: int) -> str:
@@ -42,10 +42,44 @@ async def on_message(message: discord.Message) -> None:
         return
 
     user_id = str(message.author.id)
+    in_dm = isinstance(message.channel, discord.DMChannel)
     user = stress_manager.get_user(user_id)
 
+    if not in_dm:
+        if not user["dm_hint_sent"]:
+            stress_manager.set_flag(user_id, "dm_hint_sent", True)
+            try:
+                await message.author.send(
+                    "Hi! I now work as a private AI assistant. "
+                    "Please continue chatting with me in this DM so your data and chat history stay user-specific.\n\n"
+                    "Commands:\n"
+                    "- `!reset` resets stress/lives only\n"
+                    "- `!clear` resets stress/lives and clears your private history"
+                )
+                await message.reply(
+                    "I sent you a DM for private chat. Continue there so your conversation stays personal.",
+                    mention_author=False,
+                )
+            except discord.Forbidden:
+                await message.reply(
+                    "I could not DM you. Please enable DMs from server members and message me directly.",
+                    mention_author=False,
+                )
+        return
+
+    normalized = message.content.strip().lower()
+    if normalized in {"!reset", "/reset"}:
+        stress_manager.reset_user(user_id, clear_history=False)
+        await message.channel.send("Reset complete. Lives and stress are restored for your account.")
+        return
+
+    if normalized in {"!clear", "/clear"}:
+        stress_manager.reset_user(user_id, clear_history=True)
+        await message.channel.send("Your private chat history, lives, and stress have been cleared.")
+        return
+
     if not user["notice_sent"]:
-        user["notice_sent"] = True
+        stress_manager.set_flag(user_id, "notice_sent", True)
         await message.channel.send(
             "Transparency notice: This bot enforces topic limits and stress logic. "
             f"You get {LIFE_LIMIT} off-topic lives. "
@@ -79,11 +113,15 @@ async def on_message(message: discord.Message) -> None:
         )
         return
 
-    prompt = build_prompt(message.content, user["stress"])
+    history = stress_manager.get_chat_history(user_id)
+    prompt = build_prompt(message.content, user["stress"], history)
     reply = query_ollama(prompt)
 
     if not reply:
         reply = "I could not generate a response right now. Please try again."
+
+    stress_manager.add_chat_message(user_id, "user", message.content)
+    stress_manager.add_chat_message(user_id, "assistant", reply)
 
     await message.channel.send(reply)
 

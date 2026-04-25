@@ -9,6 +9,8 @@ The bot uses local Ollama responses and includes a stress/lives system for off-t
 - Local LLM responses via Ollama (`llama3` by default)
 - Topic guardrails for infrastructure-focused conversations
 - Per-user stress/life tracking with recovery logic
+- DM-only private chat flow per user
+- Persistent per-user chat history/state in `data/user_sessions.json`
 
 ## Project Structure
 
@@ -55,6 +57,39 @@ From `HostSense/`:
 ```powershell
 python main.py
 ```
+
+## Private Chat Behavior
+
+- In server channels, the bot now redirects users to DM for privacy.
+- Real conversation happens only in DM, so each user has separate data and history.
+- Per-user state survives restarts using `data/user_sessions.json`.
+- Commands in DM:
+  - `!reset` or `/reset`: reset stress/lives only
+  - `!clear` or `/clear`: clear chat history and reset stress/lives
+
+## Update On Your Server
+
+From your server checkout directory:
+
+```powershell
+cd HostSense
+git pull
+```
+
+If dependencies changed (safe to run anytime):
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Restart the bot process (use the method you normally run it with, for example):
+
+```powershell
+python main.py
+```
+
+If you run with PM2/systemd/Docker, restart that service/container instead.
 
 ## Notes
 

@@ -1,33 +1,102 @@
 import re
+import json
+from pathlib import Path
 
 from config import (
     ALLOWED_TOPICS,
     INTENT_WORDS,
     LIFE_LIMIT,
+    MAX_HISTORY_MESSAGES,
     NEUTRAL_MESSAGES,
     RECOVERY_REQUIRED,
 )
 
 
 class StressManager:
-    """Tracks per-user stress, lives, and recovery in memory for the current bot session."""
+    """Tracks per-user stress, lives, and chat history with JSON persistence."""
 
-    def __init__(self) -> None:
-        self.sessions = {}
+    def __init__(self, storage_path: str) -> None:
+        self.storage_path = Path(storage_path)
+        self.storage_path.parent.mkdir(parents=True, exist_ok=True)
+        self.sessions = self._load()
 
-    def init_user(self, user_id: str) -> None:
-        self.sessions[user_id] = {
+    def _default_session(self) -> dict:
+        return {
             "lives": LIFE_LIMIT,
             "stress": 0,
             "recovery": 0,
             "notice_sent": False,
+            "dm_hint_sent": False,
             "exhausted": False,
+            "history": [],
         }
+
+    def _load(self) -> dict:
+        if not self.storage_path.exists():
+            return {}
+
+        try:
+            data = json.loads(self.storage_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {}
+
+        sessions = {}
+        for user_id, user_data in data.items():
+            session = self._default_session()
+            if isinstance(user_data, dict):
+                session.update(user_data)
+                if not isinstance(session.get("history"), list):
+                    session["history"] = []
+            sessions[user_id] = session
+        return sessions
+
+    def _save(self) -> None:
+        temp_file = self.storage_path.with_suffix(".tmp")
+        temp_file.write_text(
+            json.dumps(self.sessions, ensure_ascii=True, indent=2),
+            encoding="utf-8",
+        )
+        temp_file.replace(self.storage_path)
+
+    def init_user(self, user_id: str) -> None:
+        self.sessions[user_id] = self._default_session()
+        self._save()
 
     def get_user(self, user_id: str) -> dict:
         if user_id not in self.sessions:
             self.init_user(user_id)
         return self.sessions[user_id]
+
+    def set_flag(self, user_id: str, key: str, value: bool) -> None:
+        user = self.get_user(user_id)
+        user[key] = value
+        self._save()
+
+    def add_chat_message(self, user_id: str, role: str, content: str) -> None:
+        user = self.get_user(user_id)
+        history = user["history"]
+        history.append({"role": role, "content": content})
+        user["history"] = history[-MAX_HISTORY_MESSAGES:]
+        self._save()
+
+    def get_chat_history(self, user_id: str) -> list:
+        user = self.get_user(user_id)
+        return user["history"]
+
+    def clear_chat_history(self, user_id: str) -> None:
+        user = self.get_user(user_id)
+        user["history"] = []
+        self._save()
+
+    def reset_user(self, user_id: str, clear_history: bool = False) -> None:
+        user = self.get_user(user_id)
+        user["lives"] = LIFE_LIMIT
+        user["stress"] = 0
+        user["recovery"] = 0
+        user["exhausted"] = False
+        if clear_history:
+            user["history"] = []
+        self._save()
 
     def is_valid_query(self, message: str) -> bool:
         normalized = message.lower()
@@ -61,15 +130,19 @@ class StressManager:
                     user["stress"] = 0
                     user["recovery"] = 0
                     user["exhausted"] = False
+                    self._save()
                     return "valid_reset"
 
+                self._save()
                 return "valid_recovery"
 
+            self._save()
             return "valid"
 
         user["stress"] += 1
 
         if user["exhausted"]:
+            self._save()
             return "exhausted_invalid"
 
         user["lives"] -= 1
@@ -77,6 +150,8 @@ class StressManager:
             user["lives"] = 0
             user["exhausted"] = True
             user["recovery"] = 0
+            self._save()
             return "life_exhausted"
 
+        self._save()
         return "invalid"
