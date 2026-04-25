@@ -26,7 +26,6 @@ class StressManager:
             "stress": 0,
             "recovery": 0,
             "notice_sent": False,
-            "dm_hint_sent": False,
             "exhausted": False,
             "history": [],
         }

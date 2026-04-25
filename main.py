@@ -43,29 +43,12 @@ async def on_message(message: discord.Message) -> None:
 
     user_id = str(message.author.id)
     in_dm = isinstance(message.channel, discord.DMChannel)
-    user = stress_manager.get_user(user_id)
 
     if not in_dm:
-        if not user["dm_hint_sent"]:
-            stress_manager.set_flag(user_id, "dm_hint_sent", True)
-            try:
-                await message.author.send(
-                    "Hi! I now work as a private AI assistant. "
-                    "Please continue chatting with me in this DM so your data and chat history stay user-specific.\n\n"
-                    "Commands:\n"
-                    "- `!reset` resets stress/lives only\n"
-                    "- `!clear` resets stress/lives and clears your private history"
-                )
-                await message.reply(
-                    "I sent you a DM for private chat. Continue there so your conversation stays personal.",
-                    mention_author=False,
-                )
-            except discord.Forbidden:
-                await message.reply(
-                    "I could not DM you. Please enable DMs from server members and message me directly.",
-                    mention_author=False,
-                )
+        # Strict DM-only mode: never respond in guild channels.
         return
+
+    user = stress_manager.get_user(user_id)
 
     normalized = message.content.strip().lower()
     if normalized in {"!reset", "/reset"}:

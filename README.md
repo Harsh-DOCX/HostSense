@@ -60,7 +60,7 @@ python main.py
 
 ## Private Chat Behavior
 
-- In server channels, the bot now redirects users to DM for privacy.
+- In server channels, the bot is fully silent.
 - Real conversation happens only in DM, so each user has separate data and history.
 - Per-user state survives restarts using `data/user_sessions.json`.
 - Commands in DM:
