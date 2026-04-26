@@ -58,10 +58,10 @@ From `HostSense/`:
 python main.py
 ```
 
-## Private Chat Behavior
+## Chat Behavior
 
-- In server channels, the bot is fully silent.
-- Real conversation happens only in DM, so each user has separate data and history.
+- In server channels, the bot responds only when explicitly mentioned.
+- In DMs, the bot always responds.
 - Per-user state survives restarts using `data/user_sessions.json`.
 - Commands in DM:
   - `!reset` or `/reset`: reset stress/lives only

@@ -43,14 +43,31 @@ async def on_message(message: discord.Message) -> None:
 
     user_id = str(message.author.id)
     in_dm = isinstance(message.channel, discord.DMChannel)
+    bot_mentioned = client.user is not None and client.user in message.mentions
 
-    if not in_dm:
-        # Strict DM-only mode: never respond in guild channels.
+    if not in_dm and not bot_mentioned:
+        # In guild channels, only respond when explicitly mentioned.
+        return
+
+    content = message.content
+    if bot_mentioned and not in_dm and client.user is not None:
+        for mention in (
+            f"<@{client.user.id}>",
+            f"<@!{client.user.id}>",
+        ):
+            content = content.replace(mention, "")
+        content = content.strip()
+
+    if not content:
+        if not in_dm:
+            await message.channel.send(
+                f"Hi {message.author.mention}, mention me with a hosting/infrastructure question."
+            )
         return
 
     user = stress_manager.get_user(user_id)
 
-    normalized = message.content.strip().lower()
+    normalized = content.strip().lower()
     if normalized in {"!reset", "/reset"}:
         stress_manager.reset_user(user_id, clear_history=False)
         await message.channel.send("Reset complete. Lives and stress are restored for your account.")
@@ -69,7 +86,7 @@ async def on_message(message: discord.Message) -> None:
             f"After lives are exhausted, ask {RECOVERY_REQUIRED} valid infrastructure questions to reset."
         )
 
-    status = stress_manager.handle(user_id, message.content)
+    status = stress_manager.handle(user_id, content)
     user = stress_manager.get_user(user_id)
 
     if status == "neutral":
@@ -97,13 +114,13 @@ async def on_message(message: discord.Message) -> None:
         return
 
     history = stress_manager.get_chat_history(user_id)
-    prompt = build_prompt(message.content, user["stress"], history)
+    prompt = build_prompt(content, user["stress"], history)
     reply = query_ollama(prompt)
 
     if not reply:
         reply = "I could not generate a response right now. Please try again."
 
-    stress_manager.add_chat_message(user_id, "user", message.content)
+    stress_manager.add_chat_message(user_id, "user", content)
     stress_manager.add_chat_message(user_id, "assistant", reply)
 
     await message.channel.send(reply)
