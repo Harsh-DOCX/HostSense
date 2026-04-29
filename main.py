@@ -161,7 +161,7 @@ async def on_message(message: discord.Message) -> None:
         return
 
     prompt = build_prompt(content, user["stress"])
-    reply = query_ollama(prompt)
+    reply = await query_ollama(prompt)
 
     if not reply:
         reply = "I could not generate a response right now. Please try again."

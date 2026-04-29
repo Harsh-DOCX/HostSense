@@ -1,27 +1,39 @@
-import requests
-from requests import RequestException
+import asyncio
 
-from config import MAX_TOKENS, OLLAMA_MODEL, OLLAMA_URL, REQUEST_TIMEOUT_SECONDS
+import aiohttp
+
+from config import (
+    MAX_TOKENS,
+    OLLAMA_MODEL,
+    OLLAMA_NUM_CTX,
+    OLLAMA_NUM_THREAD,
+    OLLAMA_TEMPERATURE,
+    OLLAMA_URL,
+    REQUEST_TIMEOUT_SECONDS,
+)
 
 
-def query_ollama(prompt: str) -> str:
+async def query_ollama(prompt: str) -> str:
     payload = {
         "model": OLLAMA_MODEL,
         "prompt": prompt,
         "stream": False,
         "options": {
             "num_predict": MAX_TOKENS,
+            "num_ctx": OLLAMA_NUM_CTX,
+            "num_thread": OLLAMA_NUM_THREAD,
+            "temperature": OLLAMA_TEMPERATURE,
         },
     }
 
     try:
-        response = requests.post(OLLAMA_URL, json=payload, timeout=REQUEST_TIMEOUT_SECONDS)
-        response.raise_for_status()
-    except RequestException as exc:
+        timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT_SECONDS)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(OLLAMA_URL, json=payload) as response:
+                response.raise_for_status()
+                data = await response.json()
+    except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
         return f"Ollama request failed: {exc}. Please ensure Ollama is running locally."
-
-    try:
-        data = response.json()
     except ValueError:
         return "Ollama returned a non-JSON response."
 
