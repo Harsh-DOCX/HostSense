@@ -103,7 +103,7 @@ async def on_message(message: discord.Message) -> None:
 
     normalized = content.strip().lower()
     command = normalized.split()[0] if normalized else ""
-    command = command.lstrip(".")
+    command = command.lstrip(".\\")  # handles .!help and \help
 
     if command in {"!help", "/help", "help"}:
         await message.channel.send(help_response())
@@ -127,6 +127,7 @@ async def on_message(message: discord.Message) -> None:
         stress_manager.delete_user(user_id)
         await message.channel.send("Delete complete. Past chat state removed. Starting a fresh chat.")
         return
+
 
     if not user["notice_sent"]:
         stress_manager.set_flag(user_id, "notice_sent", True)
