@@ -68,7 +68,7 @@ python main.py
   - `!stress` or `/stress`: show current lives/stress and recovery target
   - `!reset` or `/reset`: reset stress/lives only
   - `!clear` or `/clear`: reset stress/lives (same behavior as reset)
-  - `!delete` or `/delete`: delete your stored chat state and start fresh
+  - `!delete` or `/delete`: delete your stored state and clear recent chat messages
 
 ## Update On Your Server
 

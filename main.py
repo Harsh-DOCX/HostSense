@@ -37,7 +37,7 @@ def help_response() -> str:
         "- `/stress` or `!stress`: show stress/lives and recovery status\n"
         "- `/reset` or `!reset`: reset stress/lives\n"
         "- `/clear` or `!clear`: same as reset\n"
-        "- `/delete` or `!delete`: delete your saved chat state and start fresh"
+        "- `/delete` or `!delete`: delete saved state and clear recent chat messages"
     )
 
 def stress_status_response(user: dict) -> str:
@@ -63,6 +63,18 @@ def stress_status_response(user: dict) -> str:
         "- Status: active\n"
         "- If lives reach 0, ask valid infrastructure questions to recover."
     )
+
+
+async def clear_recent_conversation(message: discord.Message, user_id: int) -> None:
+    async for item in message.channel.history(limit=100):
+        is_bot_message = client.user is not None and item.author.id == client.user.id
+        is_user_message = item.author.id == user_id
+        if not (is_bot_message or is_user_message):
+            continue
+        try:
+            await item.delete()
+        except (discord.Forbidden, discord.HTTPException):
+            continue
 
 
 @client.event
@@ -125,7 +137,10 @@ async def on_message(message: discord.Message) -> None:
 
     if command in {"!delete", "/delete", "delete"}:
         stress_manager.delete_user(user_id)
-        await message.channel.send("Delete complete. Past chat state removed. Starting a fresh chat.")
+        await clear_recent_conversation(message, message.author.id)
+        await message.channel.send(
+            "Delete complete. Saved state removed and recent chat messages cleared."
+        )
         return
 
 
