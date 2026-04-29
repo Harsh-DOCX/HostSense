@@ -102,25 +102,28 @@ async def on_message(message: discord.Message) -> None:
     user = stress_manager.get_user(user_id)
 
     normalized = content.strip().lower()
-    if normalized in {"!help", "/help"}:
+    command = normalized.split()[0] if normalized else ""
+    command = command.lstrip(".")
+
+    if command in {"!help", "/help", "help"}:
         await message.channel.send(help_response())
         return
 
-    if normalized in {"!stress", "/stress"}:
+    if command in {"!stress", "/stress", "stress"}:
         await message.channel.send(stress_status_response(user))
         return
 
-    if normalized in {"!reset", "/reset"}:
+    if command in {"!reset", "/reset", "reset"}:
         stress_manager.reset_user(user_id)
         await message.channel.send("Reset complete. Lives and stress are restored for your account.")
         return
 
-    if normalized in {"!clear", "/clear"}:
+    if command in {"!clear", "/clear", "clear"}:
         stress_manager.reset_user(user_id)
         await message.channel.send("Clear complete. Lives and stress are restored for your account.")
         return
 
-    if normalized in {"!delete", "/delete"}:
+    if command in {"!delete", "/delete", "delete"}:
         stress_manager.delete_user(user_id)
         await message.channel.send("Delete complete. Past chat state removed. Starting a fresh chat.")
         return
