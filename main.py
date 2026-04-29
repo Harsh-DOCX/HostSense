@@ -69,13 +69,18 @@ async def on_message(message: discord.Message) -> None:
 
     normalized = content.strip().lower()
     if normalized in {"!reset", "/reset"}:
-        stress_manager.reset_user(user_id, clear_history=False)
+        stress_manager.reset_user(user_id)
         await message.channel.send("Reset complete. Lives and stress are restored for your account.")
         return
 
     if normalized in {"!clear", "/clear"}:
-        stress_manager.reset_user(user_id, clear_history=True)
-        await message.channel.send("Your private chat history, lives, and stress have been cleared.")
+        stress_manager.reset_user(user_id)
+        await message.channel.send("Clear complete. Lives and stress are restored for your account.")
+        return
+
+    if normalized in {"!delete", "/delete"}:
+        stress_manager.delete_user(user_id)
+        await message.channel.send("Delete complete. Past chat state removed. Starting a fresh chat.")
         return
 
     if not user["notice_sent"]:
@@ -113,15 +118,11 @@ async def on_message(message: discord.Message) -> None:
         )
         return
 
-    history = stress_manager.get_chat_history(user_id)
-    prompt = build_prompt(content, user["stress"], history)
+    prompt = build_prompt(content, user["stress"])
     reply = query_ollama(prompt)
 
     if not reply:
         reply = "I could not generate a response right now. Please try again."
-
-    stress_manager.add_chat_message(user_id, "user", content)
-    stress_manager.add_chat_message(user_id, "assistant", reply)
 
     await message.channel.send(reply)
 

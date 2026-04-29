@@ -10,7 +10,7 @@ The bot uses local Ollama responses and includes a stress/lives system for off-t
 - Topic guardrails for infrastructure-focused conversations
 - Per-user stress/life tracking with recovery logic
 - DM-only private chat flow per user
-- Persistent per-user chat history/state in `data/user_sessions.json`
+- Persistent per-user stress/life state in `data/user_sessions.json`
 
 ## Project Structure
 
@@ -65,7 +65,8 @@ python main.py
 - Per-user state survives restarts using `data/user_sessions.json`.
 - Commands in DM:
   - `!reset` or `/reset`: reset stress/lives only
-  - `!clear` or `/clear`: clear chat history and reset stress/lives
+  - `!clear` or `/clear`: reset stress/lives (same behavior as reset)
+  - `!delete` or `/delete`: delete your stored chat state and start fresh
 
 ## Update On Your Server
 

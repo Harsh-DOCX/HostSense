@@ -1,12 +1,11 @@
-DISCORD_TOKEN = "enter-discord-token"
+DISCORD_TOKEN = "YOUR_DISCORD_BOT_TOKEN"
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "llama3"
+OLLAMA_MODEL = "llama3.2:1b"
 
 MAX_TOKENS = 300
 REQUEST_TIMEOUT_SECONDS = 45
 USER_DATA_FILE = "data/user_sessions.json"
-MAX_HISTORY_MESSAGES = 12
 
 LIFE_LIMIT = 3
 RECOVERY_REQUIRED = 4
@@ -73,5 +72,6 @@ NEUTRAL_MESSAGES = [
     "hi", "hello", "hey", "yo", "sup",
     "good morning", "good afternoon", "good evening",
     "thanks", "thank you", "thx", "ok", "okay",
-    "cool", "nice", "great", "bye", "good night"
+    "cool", "nice", "great", "bye", "good night","thank you",
+    "wassup", "gg", "ohoi", "okhii", "okii"
 ]

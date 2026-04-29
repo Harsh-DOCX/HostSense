@@ -6,14 +6,13 @@ from config import (
     ALLOWED_TOPICS,
     INTENT_WORDS,
     LIFE_LIMIT,
-    MAX_HISTORY_MESSAGES,
     NEUTRAL_MESSAGES,
     RECOVERY_REQUIRED,
 )
 
 
 class StressManager:
-    """Tracks per-user stress, lives, and chat history with JSON persistence."""
+    """Tracks per-user stress and lives with JSON persistence."""
 
     def __init__(self, storage_path: str) -> None:
         self.storage_path = Path(storage_path)
@@ -27,7 +26,6 @@ class StressManager:
             "recovery": 0,
             "notice_sent": False,
             "exhausted": False,
-            "history": [],
         }
 
     def _load(self) -> dict:
@@ -43,9 +41,9 @@ class StressManager:
         for user_id, user_data in data.items():
             session = self._default_session()
             if isinstance(user_data, dict):
-                session.update(user_data)
-                if not isinstance(session.get("history"), list):
-                    session["history"] = []
+                for key in session:
+                    if key in user_data:
+                        session[key] = user_data[key]
             sessions[user_id] = session
         return sessions
 
@@ -71,31 +69,18 @@ class StressManager:
         user[key] = value
         self._save()
 
-    def add_chat_message(self, user_id: str, role: str, content: str) -> None:
-        user = self.get_user(user_id)
-        history = user["history"]
-        history.append({"role": role, "content": content})
-        user["history"] = history[-MAX_HISTORY_MESSAGES:]
-        self._save()
-
-    def get_chat_history(self, user_id: str) -> list:
-        user = self.get_user(user_id)
-        return user["history"]
-
-    def clear_chat_history(self, user_id: str) -> None:
-        user = self.get_user(user_id)
-        user["history"] = []
-        self._save()
-
-    def reset_user(self, user_id: str, clear_history: bool = False) -> None:
+    def reset_user(self, user_id: str) -> None:
         user = self.get_user(user_id)
         user["lives"] = LIFE_LIMIT
         user["stress"] = 0
         user["recovery"] = 0
         user["exhausted"] = False
-        if clear_history:
-            user["history"] = []
         self._save()
+
+    def delete_user(self, user_id: str) -> None:
+        if user_id in self.sessions:
+            del self.sessions[user_id]
+            self._save()
 
     def is_valid_query(self, message: str) -> bool:
         normalized = message.lower()
