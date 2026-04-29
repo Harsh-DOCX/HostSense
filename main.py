@@ -30,6 +30,40 @@ def exhausted_response(stress: int) -> str:
     ]
     return lines[min(max(stress - 3, 0), len(lines) - 1)]
 
+def help_response() -> str:
+    return (
+        "Available commands:\n"
+        "- `/help` or `!help`: show all commands\n"
+        "- `/stress` or `!stress`: show stress/lives and recovery status\n"
+        "- `/reset` or `!reset`: reset stress/lives\n"
+        "- `/clear` or `!clear`: same as reset\n"
+        "- `/delete` or `!delete`: delete your saved chat state and start fresh"
+    )
+
+def stress_status_response(user: dict) -> str:
+    lives = user["lives"]
+    stress = user["stress"]
+    exhausted = user["exhausted"]
+    recovery = user["recovery"]
+
+    if exhausted:
+        remaining = max(RECOVERY_REQUIRED - recovery, 0)
+        return (
+            "Life system:\n"
+            f"- Lives left: {lives}/{LIFE_LIMIT}\n"
+            f"- Stress level: {stress}\n"
+            "- Status: exhausted\n"
+            f"- Ask {remaining} valid infrastructure question(s) to neutralize and restore lives."
+        )
+
+    return (
+        "Life system:\n"
+        f"- Lives left: {lives}/{LIFE_LIMIT}\n"
+        f"- Stress level: {stress}\n"
+        "- Status: active\n"
+        "- If lives reach 0, ask valid infrastructure questions to recover."
+    )
+
 
 @client.event
 async def on_ready() -> None:
@@ -68,6 +102,14 @@ async def on_message(message: discord.Message) -> None:
     user = stress_manager.get_user(user_id)
 
     normalized = content.strip().lower()
+    if normalized in {"!help", "/help"}:
+        await message.channel.send(help_response())
+        return
+
+    if normalized in {"!stress", "/stress"}:
+        await message.channel.send(stress_status_response(user))
+        return
+
     if normalized in {"!reset", "/reset"}:
         stress_manager.reset_user(user_id)
         await message.channel.send("Reset complete. Lives and stress are restored for your account.")

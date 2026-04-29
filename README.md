@@ -64,6 +64,8 @@ python main.py
 - In DMs, the bot always responds.
 - Per-user state survives restarts using `data/user_sessions.json`.
 - Commands in DM:
+  - `!help` or `/help`: show all available commands
+  - `!stress` or `/stress`: show current lives/stress and recovery target
   - `!reset` or `/reset`: reset stress/lives only
   - `!clear` or `/clear`: reset stress/lives (same behavior as reset)
   - `!delete` or `/delete`: delete your stored chat state and start fresh
